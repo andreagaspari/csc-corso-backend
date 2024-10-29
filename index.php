@@ -28,4 +28,9 @@
     // Con print posso stampare solo una stringa alla volta.
     print "8 - 4 = "; 
     print $risultato;
+
+// Ciao
+
 ?>
+
+

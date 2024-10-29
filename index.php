@@ -29,8 +29,6 @@
     print "8 - 4 = "; 
     print $risultato;
 
-// Ciao
-
 ?>
 
 

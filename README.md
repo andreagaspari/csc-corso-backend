@@ -1,2 +1,4 @@
 # csc-corso-backend
-File del corso di Sviluppo Backend Base
+File del Corso Cescot
+NUOVE COMPETENZE PER L'ECOSISTEMA DELLE IMPRESE ICT
+Corso: SVILUPPO WEB LATO BACK END - Base

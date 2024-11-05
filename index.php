@@ -1,3 +1,7 @@
+<?php 
+    ini_set("display_errors", 1);
+?>
+
 <h1>Codice HTML statico</h1>
 
 <?php
@@ -108,5 +112,106 @@
         echo "Ciao";
     }
 
+    /* 
+        Se l'utente ha un'età compresa tra 18 e 30
+        stampa Buongiorno, altrimenti stampa Ciao
+     */
+    if ($utente["eta"] > 18 && $utente["eta"] < 30) {
+        echo "Buongiorno";
+    } else {
+        echo "Ciao";
+    }
 
+    echo "<br />";
+    $utente = array(
+        "nome" => "Mario",
+        "cognome" => "Rossi"
+    );
+
+    // La prima condizione è falsa, quindi non controllo la seconda.
+    if (array_key_exists("eta", $utente) && $utente["eta"] > 18) {
+        echo "Buongiorno";
+    }
+
+    // Se l'utente ha più di 30 anni o il suo nome è Mario
+    if ($utente["nome"] == "Mario" || $utente["eta"] > 30) {
+        echo "Ciao Mario";
+    }
+
+    // Controllo l'esistenza delle chiavi prima di leggere i valori
+    if ((array_key_exists("nome", $utente) && $utente["nome"] == "Mario") 
+        || (array_key_exists("eta", $utente) && $utente["eta"] > 30)) {
+        
+    }
+
+    // Xor: Solo una delle due condizioni è vera, l'altra è falsa
+    if ($utente["nome"] == "Mario" xor $utente["cognome"] == "Bianchi") {
+
+    }
+
+    // Not: Inverte il valore della condizione (es. se NON esiste l'utente)
+    if (!$utente) {
+       echo "Non ho l'utente da mostrare"; 
+    }
+
+    // Confronto per valore
+    if ("30" == 30) 
+        echo "Vero"; // Il valore è uguale, quindi stampo vero
+        else 
+    echo "Falso";
+
+    // Confronto per valore e per tipo
+    if ("30" === 30)
+        echo "Vero";
+    else 
+        echo "Falso"; // Il valore è uguale ma il tipo è diverso, quindi stampo falso
+    
+    /* Operatori di confronto
+        > Maggiore
+        < Minore
+        >= Maggiore o uguale
+        <= Minore o uguale
+        == Uguale
+        === Uguale per valore e tipo
+        != Diverso
+     */
+
+    // Operatore Ternario (CONDIZIONE) ? VERO : FALSO
+    echo (array_key_exists("nome", $utente)) ? "Buongiorno, ". $utente['nome'] : "Benvenuto nuovo utente";
+
+    $utenti = array("pippo", "pluto", "paperino");
+    
+    // Ciclo for
+    /*
+        Inizializzazione: $i = 0 (solo la prima volta)
+
+        Condizione: $i < count($utenti) (finché $i è minore della lunghezza dell'array)
+        Istruzioni: echo $utenti[$i] (Stampo l'elemento dell'array)
+        Incremento: $i++ (Incremento il contatore)
+    */
+    for ($i = 0; $i < count($utenti); $i++) {
+        echo $utenti[$i];
+    }
+
+    // Cerco l'utente pippo, se esiste lo saluto
+    for ($i = 0; $i < count($utenti); $i++) {
+        if ($utenti[$i] == "pippo") {
+            echo "Ciao pippo";
+        }
+    }
+
+    // Ciclo while
+    /*
+        Finchè la condizione è vera ripeti le istruzioni all'interno del ciclo
+    */
+    $i = 0;
+    while ($utenti[$i] != "pippo" && $i < count($utenti)) {
+        $i++;
+    }
+
+    // Ciclo foreach
+    foreach($utenti as $valore) {
+        echo $valore;
+    }
+    
 ?>

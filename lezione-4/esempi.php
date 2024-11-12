@@ -16,4 +16,14 @@
         <?php
     }
 
+    // Impostazione e lettura di un cookie
+    setcookie("nome", "valore", time() + (60));
+    echo $_COOKIE["nome"];
+
+    // Avvio la sessione e salvo il nome utente
+    session_start();
+    $_SESSION["username"] = "Mario";
+
+    // Elimino la sessione in corso
+    // session_destroy();    
 ?>

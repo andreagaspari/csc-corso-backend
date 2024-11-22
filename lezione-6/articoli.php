@@ -17,14 +17,14 @@ try {
     // Preparo la query
         if (isset($author_id)) {
             // Query: articoli di un singolo autore con nome dell'autore, indico il parametro :author_id con il prefisso ":"
-            $query = $database->prepare("SELECT title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID WHERE author_id = :author_id");
+            $query = $database->prepare("SELECT articoli.ID AS post_id, title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID WHERE author_id = :author_id");
 
             // Associo il valore $author_id al parametro
             $query->bindParam(':author_id', $author_id, PDO::PARAM_INT);
             
         } else {
             // Query: articoli con nome dell'autore
-            $query = $database->prepare("SELECT title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID");
+            $query = $database->prepare("SELECT articoli.ID AS post_id, title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID");
         }
 
     // Eseguo la query
@@ -40,7 +40,11 @@ try {
         ?>
             <div class="post">
                 <span class="post-date"><?php echo $outputDate;?></span>
-                <h2 class="post-title"><?php echo $row['title'];?></h2>
+                <h2 class="post-title">
+                    <a href="<?php echo 'articolo.php?post_id=' . $row['post_id'];?>">
+                        <?php echo $row['title'];?>
+                    </a>
+                </h2>
                 <h3 class="post-subtitle"><?php echo $row['subtitle'];?></h3>
                 <p class="post-content"><?php echo $row['content'];?></p>
                 <p class="post-author">by 

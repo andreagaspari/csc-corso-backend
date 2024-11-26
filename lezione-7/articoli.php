@@ -8,27 +8,55 @@
     header("Content-Type: application/json");
 
     // Preparo la prima parte della query, che verrà eseguita in ogni caso
-    $q = "SELECT articoli.ID AS post_id, title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID";
+    $q = "SELECT articoli.ID AS post_id, title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID WHERE 1 = 1";
 
     // Gestisco eventuali filtri
     if ($_GET) {
-        // Se è presente il filtro categoria
-        if ($_GET['category_id']) {
-            $category_id = $_GET['category_id'];
-            // Aggiungo alla query il filtro per categoria
-            $q .= " JOIN categorie_articoli ON articolo_id = articoli.ID WHERE categoria_id = :category_id";
-            // Se è presente ANCHE il filtro autore
-            if ($_GET['author_id']) {
-                $author_id = $_GET['author_id'];
-                // Aggiungo alla query il filtro per autore
-                $q .= " AND author_id = :author_id";   
-            }
-        // Se è presente il filtro autore (e NON quello di categoria)
-        } elseif ($_GET['author_id']) {
-            $author_id = $_GET['author_id'];
-            // Aggiungo alla query il filtro autore
-            $q .= " WHERE author_id = :author_id";   
+        // Preparo il contenitore dei filtri
+        $filters = array();
+
+        // Filtro autore
+        if ($_GET['author_id']) {
+           
+            // Salvo il filtro
+            $filters[] = array(
+                "param_name" => ":author_id",
+                "value" => $_GET['author_id'],
+                "type" => PDO::PARAM_INT
+            );
+
+            // Aggiungo il filtro alla query
+            $q .= " AND author_id = :author_id";
         }
+
+        // Filtro categoria
+        if ($_GET['category_id']) {
+            
+            // Salvo il filtro
+            $filters[] = array(
+                "param_name" => ":category_id",
+                "value" => $_GET['category_id'],
+                "type" => PDO::PARAM_INT
+            );
+
+            // Aggiungo il filtro alla query
+            $q .= " AND articoli.ID IN (SELECT articolo_id FROM categorie_articoli WHERE categoria_id = :category_id)";
+        }
+
+        // Filtro articolo
+        if ($_GET['post_id']) {
+
+            // Salvo il filtro
+            $filters[] = array(
+                "param_name" => ":post_id",
+                "value" => $_GET['post_id'],
+                "type" => PDO::PARAM_INT
+            );
+
+            // Aggiungo il filtro alla query
+            $q .= " AND articoli.ID = :post_id";
+        }
+        
     }
 
     try {
@@ -41,12 +69,12 @@
         // Preparo la query
         $query = $database->prepare($q);
 
-        // Aggiungo opzionalmente i parametri
-        if (isset($category_id)) {
-            $query->bindParam(':category_id', $category_id, PDO::PARAM_INT);
-        }
-        if (isset($author_id)) {
-            $query->bindParam(':author_id', $author_id, PDO::PARAM_INT);
+        // Aggiungo i parametri derivati dai filtri
+        if (isset($filters)) {
+            foreach ($filters as $filter) {
+                // Per ogni filtro salvato, imposto il parametro corrispondente
+                $query->bindParam($filter['param_name'], $filter['value'], $filter['type']);
+            }
         }
 
         // Eseguo la query

@@ -8,7 +8,7 @@
     header("Content-Type: application/json");
 
     // Preparo la prima parte della query, che verrà eseguita in ogni caso
-    $q = "SELECT articoli.ID AS post_id, title, subtitle, content, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID WHERE 1 = 1";
+    $q = "SELECT articoli.ID AS post_id, title, subtitle, content, url, date, nicename AS author, author_id FROM articoli JOIN utenti ON author_id = utenti.ID WHERE 1 = 1";
 
     // Gestisco eventuali filtri
     if ($_GET) {

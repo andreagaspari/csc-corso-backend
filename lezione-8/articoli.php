@@ -13,7 +13,6 @@
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Accept: application/json"
     ]);
-
     $response = curl_exec($ch);
     curl_close($ch);
 

@@ -5,7 +5,7 @@
     header("Content-Type: application/json");
 
     require_once('basic_authentication.php');
-    require_once('token_auth_check.php')
+    require_once('token_auth_check.php');
 
     switch ( $_SERVER['REQUEST_METHOD'] ) {
         case 'GET': // Recupera elementi 

@@ -233,7 +233,7 @@ function handleDelete() {
         // Imposto l'attributo del PDO (PHP Data Object) per la gestione degli errori tramite eccezioni
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
-        if (isset($_POST['user_id']) && isset($_POST['token'])) {
+        if (isset($_POST['user_id']) && isset($_POST['token'])) { // TODO: Aggiorna passaggio parametri!
             // Se ho user_id e token, verifico l'esistenza e lo elimino
            
             // Preparo la query

@@ -13,6 +13,12 @@
                         Username
                     </th>
                     <th>
+                        Nome e Cognome
+                    </th>
+                    <th>
+                        Email
+                    </th>
+                    <th>
                         Operazioni
                     </th>
                 </tr>
@@ -24,8 +30,9 @@
 
         <h2>Aggiungi utente</h2>
         <form id="addUser">
-            <input type="text" id="addUser-username" placeholder="Username" />
-            <input type="password" id="addUser-password" placeholder="Password" />
+            <input type="text" id="addUser-username" placeholder="Username" required />
+            <input type="password" id="addUser-password" placeholder="Password" required />
+            <input type="email" id="addUser-email" placeholder="Email" required />
             <button type="submit">Aggiungi</button>
         </form>
 
@@ -67,7 +74,17 @@
                     tbody.innerHTML = "";
 
                     utenti.forEach(utente => {
-                        var row = "<tr><td>" + utente.username + "</td><td>";
+                        // Stampo Nome utente
+                        var row = "<tr><td>" + utente.username + "</td>";
+                            
+                            // Stampo nome e cognome
+                            row += "<td>" + utente.first_name + " " + utente.last_name + "</td>";
+                            
+                            // Stampo email
+                            row += "<td>" + utente.email + "</td>";
+
+                            // Stampo operazioni su utente
+                            row += "<td>";
                             if (utente.id != localStorage.getItem('user_id')) {
                                 row += "<button onClick='deleteUser(" + utente.id + ", \"" + utente.username + "\")'>Elimina</button>";
                                 row += "<button onClick='revokeAccess(" + utente.id + ", \"" + utente.username + "\", \"" + utente.token + "\")'>Revoca Accesso</button>";
@@ -121,10 +138,12 @@
 
                 const username = document.getElementById('addUser-username').value;
                 const password = document.getElementById('addUser-password').value;
+                const email = document.getElementById('addUser-email').value;
 
                 const formData = new FormData();
                 formData.append('username', username);
                 formData.append('password', password);
+                formData.append('email', email);
 
                 const response = await fetch('http://localhost/csc-corso-backend/esercitazione/api/users.php', {
                     method: 'POST',
@@ -133,7 +152,7 @@
                 });
 
                 const result = await response.json();
-
+                console.log(result);
                 if (result.success) {
                     getUsers();
                 } else {

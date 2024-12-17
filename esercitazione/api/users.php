@@ -235,7 +235,7 @@ function handlePost() {
                 // Aggiungo un nuovo utente al database
 
                 // Verifico la presenza dei dati obbligatori
-                if (isset($_POST['username']) && isset($_POST['password'])) {
+                if (isset($_POST['username']) && isset($_POST['password']) && isset($_POST['email'])) {
 
                     // Check di sicurezza sulla password (1 Maiuscola, 1 minuscola, 1 numero, 1 carattere speciale e minimo 8 caratteri)
                     $password_regex = "/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/";
@@ -243,12 +243,17 @@ function handlePost() {
                         // Cifro la password
                         $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
+                        // Recupero dati opzionali
+                        $firstName = (isset($_POST['first_name'])) ? $_POST['first_name'] : '';
+
                         // Preparo la query per il database (inserimento di un nuovo utente)
-                        $query = $database->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
+                        $query = $database->prepare("INSERT INTO users (username, password, email, first_name) VALUES (:username, :password, :email, :first_name)");
                         
                         // Imposto i parametri
                         $query->bindParam(":username", $_POST['username'], PDO::PARAM_STR);
                         $query->bindParam(":password", $password_hash, PDO::PARAM_STR);
+                        $query->bindParam(":email", $_POST['email'], PDO::PARAM_STR);
+                        $query->bindParam(":first_name", $firstName, PDO::PARAM_STR);
 
                         // Eseguo la query e recupero l'ID dell'utente appena creato
                         if ($query->execute()) {

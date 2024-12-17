@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <title>Login</title>
+    </head>
+    <body>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" />
+            <input type="password" id="password" placeholder="Password" />
+            <button type="submit">Login</button>
+        </form>
+        <p id="loginSuccess" style="color:#30ab00;"></p>
+        <p id="loginError" style="color:#ff0000;"></p>
+
+        <script>
+            document.getElementById("loginForm").addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch('http://localhost/csc-corso-backend/esercitazione/api/token.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('user_id', result.data.user_id);
+                    localStorage.setItem('token', result.data.token);
+
+                    const getUsernameResponse = await fetch('http://localhost/csc-corso-backend/esercitazione/api/users.php?id=' + localStorage.getItem('user_id'), {
+                        method: 'GET',
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                    });
+                    const getUsernameResult = await getUsernameResponse.json();
+
+                    if (getUsernameResult.success) {
+                        localStorage.setItem('username', getUsernameResult.data[0].username);
+                        window.location.href = "http://localhost/csc-corso-backend/esercitazione/utenti.html";
+                    } else {
+                        document.getElementById('loginError').innerText = getUsernameResult.message;
+                    }
+                } else {
+                    document.getElementById('loginError').innerText = result.message;
+                }
+
+            } );
+        </script>
+    </body>
+</html>

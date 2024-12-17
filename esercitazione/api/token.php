@@ -117,7 +117,7 @@ function handlePost() {
                 // Eseguo la query
                 if ($query->execute()) {
                     // Ritorno id utente loggato e token
-                    http_response_code(200);
+                    //http_response_code(200);
                     echo json_encode([
                         "success" => true,
                         "data" => [
@@ -137,7 +137,7 @@ function handlePost() {
                 http_response_code(401); // Codice di risposta HTTP per utente non loggato
                 echo json_encode([
                     "success" => false,
-                    "message" => "Utente non autenticato."
+                    "message" => "Credenziali non valide."
                 ]); 
             } 
         } elseif (isset($_POST['user_id']) && isset($_POST['token'])) {
@@ -232,14 +232,17 @@ function handleDelete() {
         $database = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USER, DB_PASSWORD);
         // Imposto l'attributo del PDO (PHP Data Object) per la gestione degli errori tramite eccezioni
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Recupero i dati dalla richiesta
+        $data = json_decode(file_get_contents("php://input"), true);
         
-        if (isset($_POST['user_id']) && isset($_POST['token'])) { // TODO: Aggiorna passaggio parametri!
+        if (isset($data['user_id']) && isset($data['token'])) {
             // Se ho user_id e token, verifico l'esistenza e lo elimino
            
             // Preparo la query
             $query = $database->prepare("SELECT token FROM users WHERE id = :id");
             // Imposto lo username
-            $query->bindParam(":id", $_POST['user_id'], PDO::PARAM_INT);
+            $query->bindParam(":id", $data['user_id'], PDO::PARAM_INT);
             
             // Eseguo la query
             $query->execute();
@@ -248,12 +251,12 @@ function handleDelete() {
             $result = $query->fetch(PDO::FETCH_ASSOC);
 
             // Verifico la corrispondenza del token
-            if ($result && $result['token'] == $_POST['token']) {
+            if ($result && $result['token'] == $data['token']) {
                 // Preparo la query
                 $query = $database->prepare("UPDATE users SET token = NULL, token_expiration = NULL WHERE id = :id");
 
                 // Imposto i parametri
-                $query->bindParam(":id", $_POST['user_id'], PDO::PARAM_INT);
+                $query->bindParam(":id", $data['user_id'], PDO::PARAM_INT);
 
                 // Eseguo la query
                 if ($query->execute()) {

@@ -24,7 +24,15 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Tabella popolata dinamicamente -->    
+                <tr id="user-template">
+                    <td class="user-username"></td>
+                    <td><span class="user-firstname"></span> <span class="user-lastname"></span></td>
+                    <td class="user-email"></td>
+                    <td class="user-buttons">
+                        <button class="user-btn delete-user">Elimina</button>
+                        <button class="user-btn revoke-access">Revoca Accesso</button>
+                    </td>
+                </tr> 
             </tbody>
         </table>
 
@@ -60,6 +68,47 @@
                 }
             }
 
+            /**
+             * Stampa la riga utente partendo dalla stringa interna al javascript
+             */
+            function stringaUtente(utente) {
+                // Stampo username
+                var row = "<tr><td>" + utente.username + "</td>";
+                                
+                    // Stamo nome e cognome
+                    row += "<td>" + utente.first_name + " " + utente.last_name + "</td>";
+                    
+                    // Stampo email
+                    row += "<td>" + utente.email + "</td>";
+
+                    // Stampo operazioni su utente
+                    row += "<td>";
+                    if (utente.id != localStorage.getItem('user_id')) {
+                        row += "<button onClick='deleteUser(" + utente.id + ", \"" + utente.username + "\")'>Elimina</button>";
+                        row += "<button onClick='revokeAccess(" + utente.id + ", \"" + utente.username + "\", \"" + utente.token + "\")'>Revoca Accesso</button>";
+                    }
+                row += "</td></tr>";
+
+                return row;
+            }
+
+            /**
+             * Recupero il template della riga utente. Ritorno false in caso di errore.
+             */
+            async function getTemplateUtente() {
+                const response = await fetch('http://localhost/csc-corso-backend/esercitazione/templates/utente.html');
+                if (response.ok) {
+                    const template = await response.text();
+
+                    return template;
+                } else {
+                    return false;
+                }
+            }
+
+            const templateRigaUtente = document.getElementById('user-template').cloneNode(true);
+            document.getElementById('user-template').remove();
+            
             async function getUsers() {
                 const response = await fetch('http://localhost/csc-corso-backend/esercitazione/api/users.php', {
                     method: 'GET',
@@ -67,33 +116,62 @@
                 });
                 const result = await response.json();
 
-                if (result.success) {
-                    const utenti = result.data;
-                    const tbody = document.getElementsByTagName('tbody')[0];
-                    
-                    tbody.innerHTML = "";
+                // Metodo 2 (preparazione)
+                const templateUtente = await getTemplateUtente();
+                
+                if (templateUtente) {
+                    if (result.success) {
+                        const utenti = result.data;
+                        const tbody = document.getElementsByTagName('tbody')[0];
+                        
+                        tbody.innerHTML = "";
 
-                    utenti.forEach(utente => {
-                        // Stampo Nome utente
-                        var row = "<tr><td>" + utente.username + "</td>";
-                            
-                            // Stampo nome e cognome
-                            row += "<td>" + utente.first_name + " " + utente.last_name + "</td>";
-                            
-                            // Stampo email
-                            row += "<td>" + utente.email + "</td>";
+                        utenti.forEach(utente => {
 
-                            // Stampo operazioni su utente
-                            row += "<td>";
-                            if (utente.id != localStorage.getItem('user_id')) {
-                                row += "<button onClick='deleteUser(" + utente.id + ", \"" + utente.username + "\")'>Elimina</button>";
-                                row += "<button onClick='revokeAccess(" + utente.id + ", \"" + utente.username + "\", \"" + utente.token + "\")'>Revoca Accesso</button>";
-                            }
-                        row += "</td></tr>";
-                        tbody.innerHTML = tbody.innerHTML + row;
-                    });
-                } else {
-                    console.log(result.message);
+                            // Metodo 1 - Stampo la stringa generata direttamente dentro al codice JS
+                                /*
+                                tbody.innerHTML += stringaUtente(utente);
+                                */
+
+                            // Metodo 2 - Recupero il template da file esterno con la funzione getTemplateUtente
+                                /*
+                                tbody.innerHTML += templateUtente.replace('{{username}}', utente.username);
+                                */
+                            
+                            // Metodo 3 - Creo l'elemento HTML e lo appendo al tbody                        
+                                /*
+                                let range = document.createRange();
+                                let row = range.createContextualFragment(templateUtente);
+                                
+                                // Aggiungo i dati alla riga
+                                row.querySelector('.user-firstname').innerText = utente.first_name;
+                                // [...]
+
+                                tbody.appendChild(row);
+                                */
+
+                            // Metodo 4 - Recupero il template direttamente dal documento
+                                var rigaCorrente = templateRigaUtente.cloneNode(true);
+                                
+                                rigaCorrente.querySelector('.user-username').innerText = utente.username;
+
+                                if (utente.id != localStorage.getItem('user_id')) {
+                                    rigaCorrente.querySelector('.delete-user').addEventListener('click', function() {
+                                        deleteUser(utente.id, utente.username);
+                                    });
+                                    rigaCorrente.querySelector('.revoke-access').addEventListener('click', function() {
+                                        revokeAccess(utente.id, utente.username, utente.token);
+                                    });
+                                } else {
+                                    rigaCorrente.querySelector('.delete-user').remove();
+                                    rigaCorrente.querySelector('.revoke-access').remove();
+                                }
+
+                                tbody.appendChild(rigaCorrente);
+                        });
+                    } else {
+                        console.log(result.message);
+                    }
                 }
             }
 

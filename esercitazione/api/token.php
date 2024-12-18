@@ -4,6 +4,7 @@
  */
 
 require_once("../inc/config.php");
+require_once("../inc/authHelper.php");
 
 // Indico che gestirò i dati in formato json
 header('Content-Type: application/json');
@@ -107,12 +108,12 @@ function handlePost() {
                 $expiration = date('Y-m-d H:i:s', time() + 600); 
 
                 // Preparo la query
-                $query = $database->prepare("UPDATE users SET token = :token, token_expiration = :token_expiration WHERE id = :id");
+                $query = $database->prepare("INSERT INTO tokens (token, token_expiration, user_id) VALUES (:token, :token_expiration, :user_id)");
 
                 // Imposto i parametri
-                $query->bindParam(":id", $result['id'], PDO::PARAM_INT);
                 $query->bindParam(":token", $token, PDO::PARAM_STR);
                 $query->bindParam(":token_expiration", $expiration, PDO::PARAM_STR);
+                $query->bindParam(":user_id", $result['id'], PDO::PARAM_INT);
 
                 // Eseguo la query
                 if ($query->execute()) {
@@ -144,9 +145,10 @@ function handlePost() {
             // Se ho user_id e token, verifico la validità dello stesso e in caso positivo aggiorno la scadenza
            
             // Preparo la query
-            $query = $database->prepare("SELECT token, token_expiration FROM users WHERE id = :id");
+            $query = $database->prepare("SELECT id, user_id, token, token_expiration FROM tokens WHERE user_id = :user_id AND token = :token");
             // Imposto lo username
-            $query->bindParam(":id", $_POST['user_id'], PDO::PARAM_INT);
+            $query->bindParam(":user_id", $_POST['user_id'], PDO::PARAM_INT);
+            $query->bindParam(":token", $_POST['token']);
             
             // Eseguo la query
             $query->execute();
@@ -154,8 +156,8 @@ function handlePost() {
             // Recupero l'utente, se esiste
             $result = $query->fetch(PDO::FETCH_ASSOC);
 
-            // Verifico la corrispondenza del token
-            if ($result && $result['token'] == $_POST['token']) {
+            // Verifico l'esistenza di un risultato
+            if ($result) {
                 $token_expiration = new DateTime($result['token_expiration']);
             
                 // Se non è stata superata la scadenza, il token è valido
@@ -164,10 +166,10 @@ function handlePost() {
                     $new_token_expiration = date('Y-m-d H:i:s', time() + 600);
                    
                     // Preparo la query
-                    $query = $database->prepare("UPDATE users SET token_expiration = :token_expiration WHERE id = :id");
+                    $query = $database->prepare("UPDATE tokens SET token_expiration = :token_expiration WHERE id = :id");
 
                     // Imposto i parametri
-                    $query->bindParam(":id", $_POST['user_id'], PDO::PARAM_INT);
+                    $query->bindParam(":id", $result['id'], PDO::PARAM_INT); // Uso l'id del Token per aggionrare la scadenza
                     $query->bindParam(":token_expiration", $new_token_expiration, PDO::PARAM_STR);
 
                     // Eseguo la query
@@ -223,7 +225,7 @@ function handlePost() {
 
 /**
  * Gestione delle richieste DELETE.
- * Se ho user_id e token, elimino il token e la sua scadenza.
+ * Se ho user_id e token (opzionale), elimino il / i token associati all'utente
  */
 function handleDelete() {
 
@@ -233,38 +235,42 @@ function handleDelete() {
         // Imposto l'attributo del PDO (PHP Data Object) per la gestione degli errori tramite eccezioni
         $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Recupero i dati dalla richiesta
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        if (isset($data['user_id']) && isset($data['token'])) {
-            // Se ho user_id e token, verifico l'esistenza e lo elimino
-           
-            // Preparo la query
-            $query = $database->prepare("SELECT token FROM users WHERE id = :id");
-            // Imposto lo username
-            $query->bindParam(":id", $data['user_id'], PDO::PARAM_INT);
+        // Check login
+        $headers = getallheaders();
+        $token = str_replace("Bearer ", '', $headers['Authorization']);
+        $user_id = verifyToken($database, $token);
+
+        // Utente loggato
+        if ($user_id) {
+
+            // Recupero i dati dalla richiesta
+            $data = json_decode(file_get_contents("php://input"), true);
             
-            // Eseguo la query
-            $query->execute();
+            // Controllo l'esistenza del parametro user_id (obbligatorio)
+            if (isset($data['user_id'])) {
 
-            // Recupero l'utente, se esiste
-            $result = $query->fetch(PDO::FETCH_ASSOC);
+                // Preparo la query di default
+                $queryStr = "DELETE FROM tokens WHERE user_id = :user_id";
 
-            // Verifico la corrispondenza del token
-            if ($result && $result['token'] == $data['token']) {
-                // Preparo la query
-                $query = $database->prepare("UPDATE users SET token = NULL, token_expiration = NULL WHERE id = :id");
-
-                // Imposto i parametri
-                $query->bindParam(":id", $data['user_id'], PDO::PARAM_INT);
-
+                if ($data['token']) {
+                    $queryStr .= " AND token = :token";
+                }
+                
+                $query = $database->prepare($queryStr);
+                // Se ho user_id e token, verifico l'esistenza e lo elimino
+                $query->bindParam(":user_id", $data['user_id'], PDO::PARAM_INT);
+               
+                if (isset($data['token'])) {
+                    $query->bindParam(":token", $data['token'], PDO::PARAM_STR);
+                }
+                
                 // Eseguo la query
                 if ($query->execute()) {
                     // Token eliminato, utente sloggato
                     http_response_code(200);
                     echo json_encode([
                         "success" => true,
-                        "message" => "Token valido. Countdown resettato."
+                        "message" => "Token eliminati."
                     ]);
                 } else {
                     // Errore durante l'esecuzione della query (Err. 500 - Internal Server Error)
@@ -274,20 +280,22 @@ function handleDelete() {
                         "message" => "Errore del database."
                     ]); 
                 }
+        
             } else {
-                // L'utente non esiste o il token non è corretto (Err. 401 - Unauthorized Access)
-                http_response_code(401); 
+                // Se la richiesta non ha tutti i dati obbligatori, ritorno l'errore (400 - Bad Request)
+                http_response_code(400);
                 echo json_encode([
                     "success" => false,
-                    "message" => "Utente non autenticato."
-                ]); 
+                    "message" => "Errore nella richiesta: dati mancanti"
+                ]);
             }
+        
         } else {
-            // Se la richiesta non ha tutti i dati obbligatori, ritorno l'errore (400 - Bad Request)
-            http_response_code(400);
+            // Il token non è corretto (Err. 401 - Unauthorized Access)
+            http_response_code(401); 
             echo json_encode([
                 "success" => false,
-                "message" => "Errore nella richiesta: dati mancanti"
+                "message" => "Utente non autenticato."
             ]);
         }
 

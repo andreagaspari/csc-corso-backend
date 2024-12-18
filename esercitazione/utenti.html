@@ -54,7 +54,7 @@
                 const response = await fetch('http://localhost/csc-corso-backend/esercitazione/api/token.php', {
                     method: 'DELETE',
                     headers: { 
-                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json' 
                     },
                     body: JSON.stringify({user_id, token})
@@ -69,7 +69,7 @@
             }
 
             /**
-             * Stampa la riga utente partendo dalla stringa interna al javascript
+             * Genera la riga utente in formato stringa.
              */
             function stringaUtente(utente) {
                 // Stampo username
@@ -85,7 +85,7 @@
                     row += "<td>";
                     if (utente.id != localStorage.getItem('user_id')) {
                         row += "<button onClick='deleteUser(" + utente.id + ", \"" + utente.username + "\")'>Elimina</button>";
-                        row += "<button onClick='revokeAccess(" + utente.id + ", \"" + utente.username + "\", \"" + utente.token + "\")'>Revoca Accesso</button>";
+                        row += "<button onClick='revokeAccess(" + utente.id + ", \"" + utente.username + "\")'>Revoca Accesso</button>";
                     }
                 row += "</td></tr>";
 
@@ -106,7 +106,8 @@
                 }
             }
 
-            const templateRigaUtente = document.getElementById('user-template').cloneNode(true);
+            // Recupero il template della riga utente dalla pagina html.
+            const templateRigaUtente = document.getElementById('user-template');
             document.getElementById('user-template').remove();
             
             async function getUsers() {
@@ -151,18 +152,22 @@
                                 */
 
                             // Metodo 4 - Recupero il template direttamente dal documento
+                                // Clono il template per la riga
                                 var rigaCorrente = templateRigaUtente.cloneNode(true);
                                 
+                                // Appendo i contenuti 
                                 rigaCorrente.querySelector('.user-username').innerText = utente.username;
 
                                 if (utente.id != localStorage.getItem('user_id')) {
+                                    // Aggiungo la gestione degli eventi per gli utenti diversi dall'utente corrente
                                     rigaCorrente.querySelector('.delete-user').addEventListener('click', function() {
                                         deleteUser(utente.id, utente.username);
                                     });
                                     rigaCorrente.querySelector('.revoke-access').addEventListener('click', function() {
-                                        revokeAccess(utente.id, utente.username, utente.token);
+                                        revokeAccess(utente.id, utente.username);
                                     });
                                 } else {
+                                    // Elimino i bottoni per l'utente corrente
                                     rigaCorrente.querySelector('.delete-user').remove();
                                     rigaCorrente.querySelector('.revoke-access').remove();
                                 }
@@ -191,7 +196,7 @@
                 }
             }
 
-            async function revokeAccess(user_id, username, token) {
+            async function revokeAccess(user_id, username) {
                 if (confirm("Vuoi davvero revocare l'accesso per l'utente " + username + "?")) {
                     const response = await fetch('http://localhost/csc-corso-backend/esercitazione/api/token.php', {
                         method: 'DELETE',
@@ -199,8 +204,9 @@
                             'Authorization': 'Bearer ' + localStorage.getItem('token'),
                             'Content-Type': 'application/json' 
                         },
-                        body: JSON.stringify({user_id, token})
+                        body: JSON.stringify({user_id})
                     });
+                    console.log(response);
                     const result = await response.json();
 
                     if (result.success) {
@@ -230,7 +236,7 @@
                 });
 
                 const result = await response.json();
-                console.log(result);
+                
                 if (result.success) {
                     getUsers();
                 } else {

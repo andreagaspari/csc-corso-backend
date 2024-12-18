@@ -14,7 +14,7 @@ function verifyToken($database, $token) {
         return false;
     }
 
-    $query = $database->prepare("SELECT id FROM users WHERE token = :token AND token_expiration > NOW()");
+    $query = $database->prepare("SELECT user_id FROM tokens WHERE token = :token AND token_expiration > NOW()");
     
     // Imposto i parametri
     $query->bindParam(":token", $token, PDO::PARAM_STR);
@@ -25,16 +25,16 @@ function verifyToken($database, $token) {
 
     
     if ($result) {
-        $user_id = $result['id'];
+        $user_id = $result['user_id'];
 
         // Aggiorno la scadenza a 10 minuti avanti
         $new_token_expiration = date('Y-m-d H:i:s', time() + 600);
                     
         // Preparo la query
-        $query = $database->prepare("UPDATE users SET token_expiration = :token_expiration WHERE id = :id");
+        $query = $database->prepare("UPDATE tokens SET token_expiration = :token_expiration WHERE token = :token");
 
         // Imposto i parametri
-        $query->bindParam(":id", $user_id, PDO::PARAM_INT);
+        $query->bindParam(":token", $token, PDO::PARAM_STR);
         $query->bindParam(":token_expiration", $new_token_expiration, PDO::PARAM_STR);
 
         $query->execute();
@@ -43,4 +43,9 @@ function verifyToken($database, $token) {
     } else {
         return false;
     }
+}
+
+function cleanExpiredTokens($database) {
+    $query = $database->prepare("DELETE FROM tokens WHERE token_expiration < NOW()");
+    $query->execute();
 }

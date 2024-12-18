@@ -30,6 +30,8 @@
                 const result = await response.json();
 
                 if (result.success) {
+
+                    console.log(result);
                     localStorage.setItem('user_id', result.data.user_id);
                     localStorage.setItem('token', result.data.token);
 
